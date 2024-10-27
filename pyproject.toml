@@ -1,0 +1,26 @@
+[tool.poetry]
+name = "course platform"
+version = "0.1.0"
+description = "A platform that allows users to find, buy, and handle courses through an Online Marketplace API."
+authors = ["PeterImade <peterosakpolor661@gmail.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.12"
+fastapi = "^0.115.0"
+bcrypt = "^4.2.0"
+sqlalchemy = "^2.0.35"
+alembic = "^1.13.3"
+sqlmodel = "^0.0.22"
+pydantic-settings = "^2.5.2"
+psycopg2 = "^2.9.9"
+psycopg2-binary = "^2.9.10"
+sqlmigrate = "^1.0.0"
+passlib = {extras = ["bcrypt"], version = "^1.7.4"}
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^8.3.3"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
