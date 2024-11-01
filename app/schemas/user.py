@@ -1,11 +1,10 @@
 from typing import ClassVar
-import uuid
-from pydantic import BaseModel, EmailStr, Field, model_validator
-from sqlalchemy import UUID
-from utils.validate_password import validate_password
-from utils.email_validation import validate_email
-from core.errors import InvalidCredentials
-from schemas.base import Role
+from uuid import UUID
+from pydantic import BaseModel, ConfigDict, EmailStr, Field, model_validator
+from ..utils.validate_password import validate_password
+from ..utils.email_validation import validate_email
+from ..core.errors import InvalidCredentials
+from ..schemas.base import Role
 
 class UserCreate(BaseModel):
     PASSWORD: ClassVar[str] = "password"
@@ -35,6 +34,7 @@ class UserCreate(BaseModel):
     
 
 class UserResponse(BaseModel):
+    model_config = ConfigDict(arbitrary_types_allowed=True, from_attributes=True)
     id: ClassVar[str] = "id"
 
     id: UUID
@@ -45,33 +45,19 @@ class UserResponse(BaseModel):
     role: Role
     is_active: bool
 
-    class Config: 
-        from_attributes = True
-        orm_mode = True
-
 
 class RegisterUserResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
     auth_user: UserResponse
-
-    class Config: 
-        from_attributes = True
-        orm_mode = True
         
-class Token(BaseModel):
+class Tokens(BaseModel):
     access_token: str
     refresh_token: str
     token_type: str
     
 class TokenData(BaseModel):
-    user_id: uuid.UUID
+    user_id: UUID
     user_agent: str
-
-class OTPVerified(BaseModel):
-    verified: bool
-
-    class Config: 
-        from_attributes = True
-        orm_mode = True
         
 class LogoutResponse(BaseModel):
     logged_out: bool = False
@@ -83,6 +69,12 @@ class EmailRequest(BaseModel):
 class ResetPasswordRequest(BaseModel):
     token: str
     new_password: str
+
+class RefreshTokenRequest(BaseModel):
+    refresh_token: str
+
+class TokenDeactivate(BaseModel):
+    refresh_token: str
     
    
 class NewPasswordRequest(BaseModel):

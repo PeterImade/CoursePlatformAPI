@@ -1,5 +1,5 @@
-from fastapi import FastMail, MessageSchema, MessageType, ConnectionConfig
-from core.config import Config
+from fastapi_mail import FastMail,  MessageSchema, MessageType, ConnectionConfig
+from ..core.config import Config
 from pathlib import Path
 
 # get the parent directory
@@ -11,7 +11,7 @@ mail_config = ConnectionConfig(
     MAIL_USERNAME=Config.MAIL_USERNAME,
     MAIL_PASSWORD=Config.MAIL_PASSWORD,
     MAIL_PORT=Config.MAIL_PORT,
-    MAIL_SERVER=Config.MAIL_HOST,
+    MAIL_SERVER=Config.MAIL_SERVER,
     MAIL_FROM=Config.MAIL_FROM,
     MAIL_FROM_NAME=Config.MAIL_FROM_NAME,
     MAIL_STARTTLS=True,

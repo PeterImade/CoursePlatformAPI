@@ -1,18 +1,26 @@
 import uuid
-import jwt # type: ignore
 import datetime
+import jwt
 from datetime import timedelta
+from typing import Annotated
+from fastapi import Depends
+from fastapi.security import OAuth2PasswordBearer
+from sqlalchemy.orm import Session
 from jwt.exceptions import InvalidTokenError, ExpiredSignatureError
-from schemas.user import Token, TokenData, LogoutResponse
-from .config import Config
 from redis.asyncio import Redis
-from errors import InvalidCredentials, InvalidToken, InvalidRequest
+from ..schemas.user import Tokens, TokenData, LogoutResponse
+from ..models.auth_user import User
+from .errors import InvalidCredentials, InvalidToken, InvalidRequest, UserNotFound
+from .config import Config
+from ..database.main import get_db
 
 SECRET_KEY = Config.SECRET_KEY
 ALGORITHM = Config.ALGORITHM
 ACCESS_TOKEN_EXPIRE_MINUTES = Config.ACCESS_TOKEN_EXPIRE_MINUTES
 REFRESH_TOKEN_EXPIRE_MINUTES = Config.REFRESH_TOKEN_EXPIRE_MINUTES
 FORGET_PASSWORD_EXPIRY_TIME = Config.FORGET_PASSWORD_EXPIRY_TIME
+
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/login")
 
 async def deactivate_token(token: str, user_id: uuid, redis: Redis)-> bool:
     if not verify_token(token=token):
@@ -23,6 +31,11 @@ async def deactivate_token(token: str, user_id: uuid, redis: Redis)-> bool:
         raise InvalidRequest("Refresh token expired or not found")
     await redis.delete(refresh_token_key)
     return True
+
+async def regenerate_tokens(token:str, user_id:uuid, user_agent, redis: Redis) -> Tokens:
+    deactivate_token(token=token, user_id=user_id, redis=redis)
+    tokens = generate_tokens(user_id=user_id, user_agent=user_agent)
+    return tokens
 
 def encode_jwt(payload: dict, expiry_time: timedelta):
     data_to_encode = payload.copy()
@@ -46,8 +59,8 @@ async def generate_refresh_token(user_id, user_agent, redis: Redis):
 def generate_tokens(user_id, user_agent):
     access_token = generate_access_token(user_id=user_id, user_agent=user_agent)
     refresh_token = generate_refresh_token(user_id=user_id, user_agent=user_agent)
-    token = Token(access_token=access_token, refresh_token=refresh_token, token_type="bearer")
-    return token
+    tokens = Tokens(access_token=access_token, refresh_token=refresh_token, token_type="bearer")
+    return tokens
     
 def verify_token(token: str):
     token_data = decode_jwt(token=token)
@@ -68,10 +81,20 @@ def decode_jwt(token: str):
     token_data = TokenData(user_id=user_id, user_agent=user_agent)
     return token_data
 
+# using an OTP instead
 async def generate_forgot_password_token(user_id: uuid,  user_agent: str, redis: Redis):
     payload = {"user_id": user_id , "user_agent": user_agent, "type": "forgot_password"}
     forgot_password_token = encode_jwt(payload=payload, expiry_time=FORGET_PASSWORD_EXPIRY_TIME)
     forgot_password_token_key = f"forgot_password_token:{user_id}" 
     await redis.setex(forgot_password_token_key, FORGET_PASSWORD_EXPIRY_TIME, forgot_password_token)
     return forgot_password_token
-    
+
+async def get_verified_current_user(token: Annotated[str, Depends(oauth2_scheme)], db: Annotated[Session, Depends(get_db)]) -> User:
+    token_data = verify_token(token=token)
+    user = await db.query(User).filter(User.id == token_data.user_id).first()
+    if user:
+        if not user.email_verified:
+            raise UserNotFound("email not verified")
+        return user
+    else:
+        raise UserNotFound("user not found")

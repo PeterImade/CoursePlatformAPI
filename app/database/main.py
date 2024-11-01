@@ -1,16 +1,15 @@
 from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
+from sqlalchemy.orm import sessionmaker, Session
+from sqlalchemy.ext.declarative import declarative_base 
 
-from app.core.config import Config  
+from ..core.config import Config  
 
 DATABASE_URL = Config.DATABASE_URL
 
-engine = create_async_engine(DATABASE_URL)
+engine = create_engine(DATABASE_URL)
 
 
-SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine, class_=AsyncSession)
+SessionLocal = sessionmaker(autocommit=False, bind=engine, class_=Session)
 
 def get_db():
     db = SessionLocal()
@@ -18,4 +17,5 @@ def get_db():
         yield db
     finally: 
         db.close()
+        
 Base = declarative_base()

@@ -1,10 +1,9 @@
 from fastapi import FastAPI  
-from app.database.main import engine, Base
-from app.core.errors import register_error_handlers
+from .database.main import initDB
+from .core.errors import register_error_handlers
+from .routers import router
 
 version = "v1"
-
-Base.metadata.create_all(bind=engine)
 
 app = FastAPI(
     title="Online Course Platform", 
@@ -12,10 +11,10 @@ app = FastAPI(
     version=version
 )
 
+app.include_router(router=router)
+
 register_error_handlers(app)
 
 @app.get("/")
 def home():
     return "Welcome home!"
-
-

@@ -1,31 +1,27 @@
+from __future__ import annotations
+
+from datetime import datetime
 import uuid 
 
 from sqlalchemy import (
     Column, Float, String, TIMESTAMP, ForeignKey, text
 )
 from sqlalchemy.dialects.postgresql import UUID
-from sqlalchemy.orm import relationship
+from sqlalchemy.orm import relationship, Mapped, mapped_column
 
-from app.database.main import Base 
+from ..database.main import Base  
+
 class Payment(Base):
     __tablename__ = "payments"
 
-    # Primary Key (UUID)
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, unique=True, nullable=False)
-
-    # Fields
-    amount = Column(Float, nullable=False)
-    status = Column(String, nullable=False)
+    id: Mapped[UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, nullable=False, default=uuid.uuid4)
+    amountPaid: Mapped[float] = mapped_column(nullable=False, default=0.0)
+    status: Mapped[str] = mapped_column(nullable=False)
+    created_at: Mapped[datetime] = mapped_column(TIMESTAMP(timezone=True), server_default=text('CURRENT_TIMESTAMP'), nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(TIMESTAMP(timezone=True), server_default=text('CURRENT_TIMESTAMP'), onupdate=text('CURRENT_TIMESTAMP'), nullable=False)
 
     # Foreign Key & Relationship
-    course_id = Column(UUID(as_uuid=True), ForeignKey("courses.id"), nullable=False)
-    course = relationship("Course", back_populates="payments")
-
-    # Timestamps
-    created_at = Column(TIMESTAMP(timezone=True), server_default=text('now()'), nullable=False)
-    updated_at = Column(
-        TIMESTAMP(timezone=True),
-        server_default=text('now()'),
-        onupdate=text('now()'),
-        nullable=False
-    )
+    course_id: Mapped[UUID] = mapped_column(ForeignKey("courses.id", ondelete="CASCADE"), nullable=False)
+    course: Mapped["Course"] = relationship(back_populates="payments")
+    student_id: Mapped[UUID] = mapped_column(ForeignKey("students.id", ondelete="CASCADE"), nullable=False)
+    student: Mapped["Student"] = relationship(back_populates="payments")

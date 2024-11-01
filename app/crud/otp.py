@@ -1,14 +1,11 @@
 from fastapi import Depends
 from redis.asyncio import Redis
-from app.database.main import get_db
-from app.schemas.otp import OTPRequest
-from base import CRUDBASE
-from models.auth_user import User
-from utils.send_email import send_verification_otp_to_email, send_reset_password_otp_to_email
-from utils.generate_otp import generate_otp
-from core.errors import InvalidOTP, InvalidCredentials, InvalidRequest
-from core.redis_setup import get_redis
-from core.config import Config
+from ..database.main import get_db
+from ..schemas.otp import OTPRequest
+from .base import CRUDBASE
+from ..models.auth_user import User 
+from ..core.errors import InvalidOTP, InvalidRequest
+from ..core.config import Config
 
 
 class CRUD_OTP(CRUDBASE[User, OTPRequest, OTPRequest]):

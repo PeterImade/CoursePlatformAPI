@@ -1,20 +1,18 @@
-from typing import Annotated
-import uuid
 from fastapi import Depends, Header, BackgroundTasks
-from fastapi.security import OAuth2PasswordRequestForm, OAuth2PasswordBearer
+from fastapi.security import OAuth2PasswordRequestForm
 from redis.asyncio import Redis
-from app.models.auth_user import User
-from crud.user import (
+from ..crud.user import (
     CRUDAuthUser
 )
-from schemas.user import ChangePasswordRequest, ForgotPasswordResponse, NewPasswordRequest, OTPVerified, PasswordChanged, LogoutResponse, ResetPasswordResponse, UserCreate, RegisterUserResponse, EmailRequest
-from core.errors import UserAlreadyExists, UserNotFound, InvalidOTP, InvalidCredentials, InvalidToken, InvalidRequest
-from schemas.otp import OTPRequest, OTPVerifyRequest
-from services.otp_service import OTPService
-from crud.otp import CRUD_OTP
-from models.auth_user import User
-from utils.hash_password import verify_password, hash_password
-from core.tokens import generate_tokens, deactivate_token
+from ..services.otp_service import OTPService
+from ..models.auth_user import User
+from ..models.auth_user import User
+from ..schemas.otp import OTPRequest, OTPVerifyRequest, OTPVerified
+from ..schemas.user import ChangePasswordRequest, ForgotPasswordResponse, NewPasswordRequest, PasswordChanged, LogoutResponse, RefreshTokenRequest, ResetPasswordResponse, Tokens, UserCreate, RegisterUserResponse, EmailRequest
+from ..crud.otp import CRUD_OTP
+from ..core.errors import UserAlreadyExists, UserNotFound, InvalidOTP, InvalidCredentials, InvalidToken, InvalidRequest
+from ..core.tokens import generate_tokens, deactivate_token, regenerate_tokens
+from ..utils.hash_password import verify_password, hash_password
 
 class AuthUserService: 
     def __init__(self, crud_auth_user: CRUDAuthUser, crud_otp: CRUD_OTP):
@@ -28,7 +26,7 @@ class AuthUserService:
         data_obj.password = hash_password(data_obj.password)
         new_user = await self.crud_auth_user.create(data_obj)
         otp_obj = OTPRequest(email=new_user.email)
-        otp_service = OTPService(redis=Redis, otp_request_obj=otp_obj)
+        otp_service = OTPService(redis=redis, otp_request_obj=otp_obj)
         otp = await otp_service.generate_and_store_otp()
         background_task.add_task(otp_service.send_verification_email, otp_obj, new_user.first_name, otp)
         return RegisterUserResponse(auth_user=new_user)
@@ -60,11 +58,8 @@ class AuthUserService:
         return tokens
     
     # Done
-    async def logout_user(self, token: str, user_id: uuid):
-        user = await self.crud_auth_user.get_query_by_id(id=user_id)
-        if not user:
-            raise UserNotFound()
-        if not deactivate_token(token=token, user_id=user.id):
+    async def logout_user(self, token: str, user: User, redis: Redis):
+        if not deactivate_token(token=token, user_id=user.id, redis=redis):
           raise InvalidToken()
         return LogoutResponse(logged_out=True)
     
@@ -82,7 +77,7 @@ class AuthUserService:
     async def reset_password(self, data_obj: NewPasswordRequest):
         user = await self.crud_auth_user.get_user_by_email(data_obj.email)
         if not user:
-            raise UserNotFound() 
+            raise UserNotFound()
         if verify_password(data_obj.new_password, hashed_password=user.password):
             raise InvalidRequest("Cannot change password to old password")
         new_password = hash_password(plain_password=data_obj.new_password)
@@ -90,13 +85,15 @@ class AuthUserService:
         return ResetPasswordResponse()
     
     # Done
-    async def change_password(self, data_obj: ChangePasswordRequest, current_user_id: str, current_user_password: str):
-        if not verify_password(plain_password=data_obj.old_password, hashed_password=current_user_password):
+    async def change_password(self, data_obj: ChangePasswordRequest, current_user: User,):
+        if not verify_password(plain_password=data_obj.old_password, hashed_password=current_user.password):
             raise InvalidRequest("Wrong old password")
         
-        if verify_password(plain_password=data_obj.new_password, hashed_password=current_user_password):
+        if verify_password(plain_password=data_obj.new_password, hashed_password=current_user.password):
             raise InvalidRequest("Cannot change to old password")
         
-        self.crud_auth_user.update(id=current_user_id, data_obj={User.PASSWORD: data_obj.new_password})
+        self.crud_auth_user.update(id=current_user.id, data_obj={User.PASSWORD: data_obj.new_password})
         return PasswordChanged()
-        
+    
+    async def refresh_token(self, data_obj: RefreshTokenRequest, user_id, user_agent, redis: Redis) -> Tokens:
+        return regenerate_tokens(token=data_obj.refresh_token, user_id=user_id, user_agent=user_agent, redis=redis)

@@ -1,15 +1,15 @@
 from datetime import datetime
 from sqlalchemy.orm import Session
 from typing import Optional, Type, TypeVar, Generic, Union
-from app.database.main import Base
+from ..database.main import Base
 from pydantic import BaseModel
 
 ModelType = TypeVar("ModelType", bound=Base)
-CreateSchemaType = TypeVar("CreateSchemaType", BaseModel)
-UpdateSchemaType = TypeVar("UpdateSchemaType", BaseModel)
+CreateSchemaType = TypeVar("CreateSchemaType", bound=BaseModel)
+UpdateSchemaType = TypeVar("UpdateSchemaType", bound=BaseModel)
 
 
-class CRUDBASE(Generic([ModelType, CreateSchemaType, UpdateSchemaType])): 
+class CRUDBASE(Generic[ModelType, CreateSchemaType, UpdateSchemaType]): 
     def __init__(self, db: Session, model: Type[ModelType]):
         self.db = db
         self.model = model

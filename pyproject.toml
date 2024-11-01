@@ -17,6 +17,9 @@ psycopg2 = "^2.9.9"
 psycopg2-binary = "^2.9.10"
 sqlmigrate = "^1.0.0"
 passlib = {extras = ["bcrypt"], version = "^1.7.4"}
+redis = {extras = ["asyncio"], version = "^5.2.0"}
+fastapi-mail = "^1.4.1"
+pyjwt = "^2.9.0"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.3.3"

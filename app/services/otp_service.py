@@ -1,8 +1,8 @@
 from redis.asyncio import Redis
-from app.schemas.otp import OTPRequest
-from app.utils import generate_otp
-from app.utils.send_email import send_verification_otp_to_email, send_reset_password_otp_to_email
-from core.config import Config
+from ..schemas.otp import OTPRequest
+from ..utils import generate_otp
+from ..utils.send_email import send_verification_otp_to_email, send_reset_password_otp_to_email
+from ..core.config import Config
 
 class OTPService:
     def __init__(self, redis: Redis, otp_request_obj: OTPRequest) -> None:
