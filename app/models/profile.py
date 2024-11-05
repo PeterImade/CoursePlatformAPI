@@ -22,5 +22,5 @@ class Profile(Base):
     created_at: Mapped[datetime] = mapped_column(TIMESTAMP(timezone=True), server_default=text('CURRENT_TIMESTAMP'), nullable=False)
     updated_at: Mapped[datetime] = mapped_column(TIMESTAMP(timezone=True), server_default=text('CURRENT_TIMESTAMP'), onupdate=text('CURRENT_TIMESTAMP'), nullable=False)
 
-    user_id: Mapped[UUID] = mapped_column(ForeignKey("users.id"), nullable=False) 
+    user_id: Mapped[UUID] = mapped_column(ForeignKey("users.id"), nullable=False, index=True) 
     user: Mapped["User"] = relationship(back_populates="profile", uselist=False)

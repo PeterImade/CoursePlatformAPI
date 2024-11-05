@@ -1,8 +1,10 @@
 from redis.asyncio import Redis
+from .config import Config
 
-redis = Redis(host="localhost", port=6379, db=0, decode_responses=True)
-async def get_redis() -> Redis:
+redis = Redis(host=Config.REDIS_HOST, port=Config.REDIS_PORT, db=Config.REDIS_DB_NO, decode_responses=True)
+
+async def get_redis():
     try:
         yield redis
     finally:
-        await redis.close()
+        redis.close()

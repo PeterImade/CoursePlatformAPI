@@ -20,9 +20,9 @@ class Notification(Base):
     updated_at: Mapped[datetime] = mapped_column(TIMESTAMP(timezone=True), server_default=text('CURRENT_TIMESTAMP'), onupdate=text('CURRENT_TIMESTAMP'), nullable=False)
 
     # Foreign Key & Relationship
-    user_id: Mapped[UUID] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), nullable=False) 
+    user_id: Mapped[UUID] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True) 
     user: Mapped["User"] = relationship(back_populates="notifications")
-    student_id: Mapped[UUID] = mapped_column(ForeignKey("students.id", ondelete="CASCADE"), nullable=False) 
+    student_id: Mapped[UUID] = mapped_column(ForeignKey("students.id", ondelete="CASCADE"), nullable=False, index=True) 
     student: Mapped["Student"] = relationship(back_populates="notifications")
-    instructor_id: Mapped[UUID] = mapped_column(ForeignKey("instructors.id", ondelete="CASCADE"), nullable=False) 
+    instructor_id: Mapped[UUID] = mapped_column(ForeignKey("instructors.id", ondelete="CASCADE"), nullable=False, index=True) 
     instructor: Mapped["Instructor"] = relationship(back_populates="notifications")

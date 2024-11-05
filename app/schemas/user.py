@@ -3,7 +3,7 @@ from uuid import UUID
 from pydantic import BaseModel, ConfigDict, EmailStr, Field, model_validator
 from ..utils.validate_password import validate_password
 from ..utils.email_validation import validate_email
-from ..core.errors import InvalidCredentials
+from ..core.exceptions import InvalidCredentials
 from ..schemas.base import Role
 
 class UserCreate(BaseModel):
@@ -12,6 +12,8 @@ class UserCreate(BaseModel):
 
     username: str = Field(max_length=25)
     email: EmailStr = Field(max_length=40)
+    firstName: str = Field(max_length=25)
+    lastName: str = Field(max_length=25)
     password: str = Field(min_length=6)
 
     @model_validator(mode="before")
@@ -38,8 +40,9 @@ class UserResponse(BaseModel):
     id: ClassVar[str] = "id"
 
     id: UUID
-    first_name: str
-    last_name: str
+    username: str
+    firstName: str
+    lastName: str
     email: EmailStr
     email_verified: bool
     role: Role

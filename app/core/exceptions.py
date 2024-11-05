@@ -59,6 +59,10 @@ class UserNotFound(CoursePlatformException):
     """User Not found"""
     pass
 
+class TooManyRequests(CoursePlatformException):
+    """Too many requests"""
+    pass
+
 
 def create_exception_handler(status_code: int, initial_detail: Any) -> Callable[[Request, Exception], JSONResponse]:
     async def exception_handler(request: Request, exc: CoursePlatformException):
@@ -129,6 +133,12 @@ def register_error_handlers(app: FastAPI):
     app.add_exception_handler(UserNotFound, create_exception_handler(status_code=status.HTTP_404_NOT_FOUND,initial_detail={
         "message": "User not found",
         "error_code": "user_not_found",
+    }))
+   
+    app.add_exception_handler(TooManyRequests, create_exception_handler(status_code=status.HTTP_429_TOO_MANY_REQUESTS,initial_detail={
+        "message": "You have exceeded the maximum number of OTP requests.",
+        "resolution": "Please wait for a few minutes before trying again.",
+        "error_code": "too_many_requests",
     }))
 
 

@@ -10,7 +10,7 @@ from jwt.exceptions import InvalidTokenError, ExpiredSignatureError
 from redis.asyncio import Redis
 from ..schemas.user import Tokens, TokenData, LogoutResponse
 from ..models.auth_user import User
-from .errors import InvalidCredentials, InvalidToken, InvalidRequest, UserNotFound
+from .exceptions import InvalidCredentials, InvalidToken, InvalidRequest, UserNotFound
 from .config import Config
 from ..database.main import get_db
 

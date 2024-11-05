@@ -8,9 +8,8 @@ from sqlalchemy import (
     Column, String, Float, ForeignKey, TIMESTAMP, text
 )
 from sqlalchemy.dialects.postgresql import UUID
-from sqlalchemy.orm import relationship, Mapped, mapped_column
-
-from ..database.main import Base 
+from sqlalchemy.orm import relationship, Mapped, mapped_column 
+from ..database.main import Base  
 
 class Course(Base):
     __tablename__ = "courses"
@@ -32,6 +31,7 @@ class Course(Base):
 
     # Relationships
     payments: Mapped[List["Payment"]] = relationship(back_populates="course", passive_deletes=True, cascade="all, delete")
-    instructor_id: Mapped[UUID] = mapped_column(ForeignKey("instructors.id", ondelete="CASCADE"), nullable=False)
+    instructor_id: Mapped[UUID] = mapped_column(ForeignKey("instructors.id", ondelete="CASCADE"), nullable=False, index=True)
     instructor: Mapped["Instructor"] = relationship(back_populates="courses")
-    students: Mapped[List["Student"]] = relationship(back_populates="courses", secondary=lambda: student_course_association)
+    students: Mapped[List["Student"]] = relationship(back_populates="courses", secondary= "enrollments")
+    enrollments: Mapped[List["Enrollment"]] = relationship(back_populates="course")

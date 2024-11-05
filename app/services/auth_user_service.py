@@ -1,18 +1,21 @@
 from fastapi import Depends, Header, BackgroundTasks
 from fastapi.security import OAuth2PasswordRequestForm
 from redis.asyncio import Redis
-from ..crud.user import (
+from ..repositories.user import (
     CRUDAuthUser
 )
 from ..services.otp_service import OTPService
 from ..models.auth_user import User
 from ..models.auth_user import User
-from ..schemas.otp import OTPRequest, OTPVerifyRequest, OTPVerified
+from ..schemas.otp import OTPRequest, OTPVerifyRequest, OTPVerified, ResendOTPResponse, ResendOTPRequest
 from ..schemas.user import ChangePasswordRequest, ForgotPasswordResponse, NewPasswordRequest, PasswordChanged, LogoutResponse, RefreshTokenRequest, ResetPasswordResponse, Tokens, UserCreate, RegisterUserResponse, EmailRequest
-from ..crud.otp import CRUD_OTP
-from ..core.errors import UserAlreadyExists, UserNotFound, InvalidOTP, InvalidCredentials, InvalidToken, InvalidRequest
+from ..repositories.otp import CRUD_OTP
+from ..core.exceptions import UserAlreadyExists, UserNotFound, InvalidOTP, InvalidCredentials, InvalidToken, InvalidRequest
 from ..core.tokens import generate_tokens, deactivate_token, regenerate_tokens
 from ..utils.hash_password import verify_password, hash_password
+from ..core.logger import get_logger 
+
+logger = get_logger(__name__)
 
 class AuthUserService: 
     def __init__(self, crud_auth_user: CRUDAuthUser, crud_otp: CRUD_OTP):
@@ -20,19 +23,23 @@ class AuthUserService:
         self.crud_otp = crud_otp
 
     async def register_auth_user(self, data_obj: UserCreate, background_task: BackgroundTasks, redis: Redis): 
-        user = await self.crud_auth_user.get_user_by_email(data_obj.email.lower())
+        user = self.crud_auth_user.get_user_by_email(data_obj.email.lower())
         if user:
             raise UserAlreadyExists()
         data_obj.password = hash_password(data_obj.password)
         new_user = await self.crud_auth_user.create(data_obj)
         otp_obj = OTPRequest(email=new_user.email)
-        otp_service = OTPService(redis=redis, otp_request_obj=otp_obj)
+        otp_service = OTPService(redis=redis, otp_request_obj=otp_obj) 
         otp = await otp_service.generate_and_store_otp()
-        background_task.add_task(otp_service.send_verification_email, otp_obj, new_user.first_name, otp)
+        logger.info(f"otp stored successfully in redis.....{otp}")
+        try:
+            background_task.add_task(otp_service.send_verification_email, otp_obj, new_user.firstName, otp) 
+        except Exception as e:
+            logger.exception(e)
         return RegisterUserResponse(auth_user=new_user)
     
     async def verify_otp(self, data_obj: OTPVerifyRequest, redis: Redis):
-        otp_user = await self.crud_auth_user.get_user_by_email(data_obj.email.lower())
+        otp_user = self.crud_auth_user.get_user_by_email(data_obj.email.lower())
         if otp_user is None:
             raise UserNotFound("User with this email does not exist")
         otp_verify = await self.crud_otp.verify_otp(user_obj=otp_user, user_otp=data_obj.otp, redis=redis)
@@ -40,7 +47,27 @@ class AuthUserService:
             raise InvalidOTP("Invalid OTP")
         await self.crud_auth_user.update(id=otp_user.id, data_obj={User.EMAIL_VERIFIED: True})
         return OTPVerified(verified=True)
-    
+        
+
+    async def resend_otp(
+            self, 
+            data_obj: ResendOTPRequest, 
+            background_task: BackgroundTasks, 
+            redis: Redis
+    ):
+        user = self.crud_auth_user.get_user_by_email(data_obj.email.lower())
+        if user is None:    
+            raise UserNotFound("User with this email does not exist") 
+        otp_service = OTPService(redis=redis, otp_request_obj=data_obj) 
+        otp = await otp_service.generate_and_store_otp()
+        logger.info(f"otp stored successfully in redis.....{otp}")
+        try:
+            background_task.add_task(otp_service.send_verification_email, data_obj, user.firstName, otp) 
+        except Exception as e:
+            logger.exception(e)
+        return ResendOTPResponse(sent=True)
+
+
     async def login_user(
         self, 
         form_data: OAuth2PasswordRequestForm,
@@ -70,7 +97,10 @@ class AuthUserService:
             raise UserNotFound() 
         otp_service = OTPService(otp_request_obj=data_obj, redis=redis)
         otp = await otp_service.generate_and_store_otp()
-        background_tasks.add_task(otp_service.send_reset_password_email, data_obj, user.firstName, otp)  
+        try:
+            background_tasks.add_task(otp_service.send_reset_password_email, data_obj, user.firstName, otp)  
+        except Exception as e:
+            logger.exception(e)
         return ForgotPasswordResponse()
     
     # Done

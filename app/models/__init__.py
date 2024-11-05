@@ -4,7 +4,7 @@ from .instructor import *
 from .notifications import *
 from .payment import *
 from .student import *
-from .student_course import *
+from .enrollment import *
 from .profile import *
 
 from ..database.main import engine
@@ -15,5 +15,5 @@ auth_user.Base.metadata.create_all(bind=engine)
 notifications.Base.metadata.create_all(bind=engine)
 payment.Base.metadata.create_all(bind=engine)
 student.Base.metadata.create_all(bind=engine)
-student_course.Base.metadata.create_all(bind=engine)
+enrollment.Base.metadata.create_all(bind=engine)
 profile.Base.metadata.create_all(bind=engine)

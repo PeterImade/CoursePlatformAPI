@@ -19,7 +19,7 @@ class Instructor(Base):
     updated_at: Mapped[datetime] = mapped_column(TIMESTAMP(timezone=True), server_default=text('CURRENT_TIMESTAMP'), onupdate=text('CURRENT_TIMESTAMP'), nullable=False)
 
     # Relationships 
-    user_id: Mapped[UUID] = mapped_column(ForeignKey("users.id"), nullable=True)
+    user_id: Mapped[UUID] = mapped_column(ForeignKey("users.id"), nullable=True, index=True)
     user: Mapped["User"] = relationship(back_populates="instructor", uselist=False)
     notifications: Mapped[List["Notification"]] = relationship(back_populates="instructor", passive_deletes=True, cascade="all, delete")
     courses: Mapped[List["Course"]] = relationship(back_populates="instructor", passive_deletes=True, cascade="all, delete") 

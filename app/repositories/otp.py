@@ -4,7 +4,7 @@ from ..database.main import get_db
 from ..schemas.otp import OTPRequest
 from .base import CRUDBASE
 from ..models.auth_user import User 
-from ..core.errors import InvalidOTP, InvalidRequest
+from ..core.exceptions import InvalidOTP, InvalidRequest
 from ..core.config import Config
 
 
@@ -23,8 +23,8 @@ class CRUD_OTP(CRUDBASE[User, OTPRequest, OTPRequest]):
             if attempts >= 5:
                 raise InvalidRequest("Too many attempts. Please try again later.")
     
-        stored_otp = await redis.get(otp_key)
-        trials_left = await int(redis.get(trials_key) or 0)
+        stored_otp = await redis.get(otp_key) 
+        trials_left = int(await redis.get(trials_key) or Config.OTP_MAX_TRIALS)
         if stored_otp is None:
             raise InvalidOTP("OTP expired or not found")
         if trials_left <= 0:

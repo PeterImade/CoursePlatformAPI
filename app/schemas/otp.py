@@ -3,7 +3,7 @@ from typing import Optional
 from pydantic import BaseModel, EmailStr, Field, ConfigDict
  
 class OTPRequest(BaseModel):
-    email: str
+    email: EmailStr     
 
 class OTPVerifyRequest(BaseModel):
     email: EmailStr
@@ -11,4 +11,11 @@ class OTPVerifyRequest(BaseModel):
 
 class OTPVerified(BaseModel):
     model_config = ConfigDict(arbitrary_types_allowed=True, from_attributes=True)
-    verified: bool  
+    verified: bool
+
+class ResendOTPResponse(BaseModel):
+    model_config = ConfigDict(arbitrary_types_allowed=True, from_attributes=True)
+    sent: bool
+
+class ResendOTPRequest(BaseModel):
+    email: EmailStr
