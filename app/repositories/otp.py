@@ -17,14 +17,14 @@ class CRUD_OTP(CRUDBASE[User, OTPRequest, OTPRequest]):
         # Rate limiting logic 
         attempts  = await redis.get(attempts_key)
         if not attempts:
-            await redis.setex(attempts_key, Config.OTP_RATE_LIMIT_TIME, 1)
+            await redis.setex(attempts_key, Config.REPLENISH_INTERVAL, 1)
         else:
             attempts = int(attempts)
             if attempts >= 5:
                 raise InvalidRequest("Too many attempts. Please try again later.")
     
         stored_otp = await redis.get(otp_key) 
-        trials_left = int(await redis.get(trials_key) or Config.OTP_MAX_TRIALS)
+        trials_left = int(await redis.get(trials_key) or Config.OTP_MAX_TOKEN)
         if stored_otp is None:
             raise InvalidOTP("OTP expired or not found")
         if trials_left <= 0:

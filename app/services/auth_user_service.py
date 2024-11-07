@@ -8,12 +8,13 @@ from ..services.otp_service import OTPService
 from ..models.auth_user import User
 from ..models.auth_user import User
 from ..schemas.otp import OTPRequest, OTPVerifyRequest, OTPVerified, ResendOTPResponse, ResendOTPRequest
-from ..schemas.user import ChangePasswordRequest, ForgotPasswordResponse, NewPasswordRequest, PasswordChanged, LogoutResponse, RefreshTokenRequest, ResetPasswordResponse, Tokens, UserCreate, RegisterUserResponse, EmailRequest
+from ..schemas.user import ChangePasswordRequest, ChangeRoleRequest, ForgotPasswordResponse, NewPasswordRequest, PasswordChanged, LogoutResponse, RefreshTokenRequest, ResetPasswordResponse, Tokens, UserCreate, RegisterUserResponse, EmailRequest, UserResponse
 from ..repositories.otp import CRUD_OTP
 from ..core.exceptions import UserAlreadyExists, UserNotFound, InvalidOTP, InvalidCredentials, InvalidToken, InvalidRequest
 from ..core.tokens import generate_tokens, deactivate_token, regenerate_tokens
 from ..utils.hash_password import verify_password, hash_password
 from ..core.logger import get_logger 
+from ..schemas.base import Role
 
 logger = get_logger(__name__)
 
@@ -71,9 +72,9 @@ class AuthUserService:
     async def login_user(
         self, 
         form_data: OAuth2PasswordRequestForm,
-        user_agent: str = Header(None), 
+        redis: Redis
     ):
-        auth_user = await self.crud_auth_user.get_user_by_email(form_data.username.lower())
+        auth_user = self.crud_auth_user.get_user_by_email(form_data.username.lower())
         if not auth_user:
             raise InvalidCredentials()
         if not auth_user.email_verified:
@@ -81,7 +82,7 @@ class AuthUserService:
         is_password = verify_password(form_data.password, auth_user.password)
         if not is_password:
             raise InvalidCredentials()
-        tokens = await generate_tokens(user_id=auth_user.id, user_agent=user_agent)
+        tokens = await generate_tokens(user_id=auth_user.id, redis=redis)
         return tokens
     
     # Done
@@ -92,7 +93,7 @@ class AuthUserService:
     
     # Done
     async def forgot_password(self, data_obj: EmailRequest, background_tasks: BackgroundTasks, redis: Redis):
-        user = await self.crud_auth_user.get_user_by_email(email=data_obj.email.lower())
+        user = self.crud_auth_user.get_user_by_email(email=data_obj.email.lower())
         if not user:
             raise UserNotFound() 
         otp_service = OTPService(otp_request_obj=data_obj, redis=redis)
@@ -105,7 +106,7 @@ class AuthUserService:
     
     # Done
     async def reset_password(self, data_obj: NewPasswordRequest):
-        user = await self.crud_auth_user.get_user_by_email(data_obj.email)
+        user = self.crud_auth_user.get_user_by_email(data_obj.email)
         if not user:
             raise UserNotFound()
         if verify_password(data_obj.new_password, hashed_password=user.password):
@@ -115,15 +116,27 @@ class AuthUserService:
         return ResetPasswordResponse()
     
     # Done
-    async def change_password(self, data_obj: ChangePasswordRequest, current_user: User,):
+    async def change_password(self, data_obj: ChangePasswordRequest, current_user: User):
         if not verify_password(plain_password=data_obj.old_password, hashed_password=current_user.password):
             raise InvalidRequest("Wrong old password")
-        
+
         if verify_password(plain_password=data_obj.new_password, hashed_password=current_user.password):
             raise InvalidRequest("Cannot change to old password")
         
-        self.crud_auth_user.update(id=current_user.id, data_obj={User.PASSWORD: data_obj.new_password})
-        return PasswordChanged()
+        logger.info(f"getting new password....{current_user.password}")
+        self.crud_auth_user.update(
+            id=current_user.id, 
+             data_obj={"password": hash_password(data_obj.new_password)}
+            )
+        logger.info(f"new password....{current_user.password}")
+        return PasswordChanged()    
     
-    async def refresh_token(self, data_obj: RefreshTokenRequest, user_id, user_agent, redis: Redis) -> Tokens:
-        return regenerate_tokens(token=data_obj.refresh_token, user_id=user_id, user_agent=user_agent, redis=redis)
+    async def refresh_token(self, data_obj: RefreshTokenRequest, user_id, redis: Redis) -> Tokens:
+        return await regenerate_tokens(token=data_obj.refresh_token, user_id=user_id, redis=redis)
+    
+    async def change_role(self, user_id):
+        user = self.crud_auth_user.get_by_id(id=user_id)
+        if not user:
+            raise UserNotFound() 
+        await self.crud_auth_user.update(id=user_id, data_obj={"role": Role.INSTRUCTOR.value})
+        return UserResponse(**user)

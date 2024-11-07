@@ -47,6 +47,10 @@ class InsufficientPermission(CoursePlatformException):
     """User does not have the necessary permissions to perform an action."""
     pass
 
+class UnauthorizedAccess(CoursePlatformException):
+    """User does not have the necessary permissions to perform an action."""
+    pass
+
 class CourseNotFound(CoursePlatformException):
     """Course Not found"""
     pass
@@ -128,6 +132,11 @@ def register_error_handlers(app: FastAPI):
     app.add_exception_handler(InsufficientPermission, create_exception_handler(status_code=status.HTTP_401_UNAUTHORIZED, initial_detail={
         "message": "You do not have enough permissions to perform this action",
         "error_code": "insufficient_permissions"
+    }))
+    
+    app.add_exception_handler(UnauthorizedAccess, create_exception_handler(status_code=status.HTTP_403_FORBIDDEN, initial_detail={
+        "message": "You are not allowed to perform this action",
+        "error_code": "forbidden"
     }))
 
     app.add_exception_handler(UserNotFound, create_exception_handler(status_code=status.HTTP_404_NOT_FOUND,initial_detail={

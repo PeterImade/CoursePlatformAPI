@@ -1,3 +1,4 @@
+from datetime import datetime
 from typing import ClassVar
 from uuid import UUID
 from pydantic import BaseModel, ConfigDict, EmailStr, Field, model_validator
@@ -47,6 +48,8 @@ class UserResponse(BaseModel):
     email_verified: bool
     role: Role
     is_active: bool
+    created_at: datetime
+    updated_at: datetime
 
 
 class RegisterUserResponse(BaseModel):
@@ -60,7 +63,6 @@ class Tokens(BaseModel):
     
 class TokenData(BaseModel):
     user_id: UUID
-    user_agent: str
         
 class LogoutResponse(BaseModel):
     logged_out: bool = False
@@ -120,3 +122,6 @@ class PasswordChanged(BaseModel):
     
 class ForgotPasswordResponse(BaseModel):
     reset_password_link_sent: bool = True
+
+class ChangeRoleRequest(BaseModel): 
+    role: str

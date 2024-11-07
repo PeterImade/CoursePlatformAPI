@@ -19,7 +19,7 @@ class OTPService:
         logger.info("setting otp token in redis......")
         await self.redis.setex(otp_key, Config.OTP_EXPIRY, otp)
         logger.info("setting otp trials in redis......")
-        await self.redis.setex(trials_key, Config.OTP_EXPIRY, Config.OTP_MAX_TRIALS)
+        await self.redis.setex(trials_key, Config.OTP_EXPIRY, Config.OTP_MAX_TOKEN)
         otp_value = await self.redis.get(otp_key)
         return otp_value
         

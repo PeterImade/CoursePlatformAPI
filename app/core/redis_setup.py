@@ -7,4 +7,4 @@ async def get_redis():
     try:
         yield redis
     finally:
-        redis.close()
+        await redis.close()
