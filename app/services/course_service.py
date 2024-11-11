@@ -1,5 +1,5 @@
 import json
-from typing import List
+from typing import List, Optional
 from uuid import UUID
 
 from redis import Redis
@@ -32,7 +32,7 @@ class CourseService:
         logger.info("Course retrieved successfully..........")
         return course
     
-    async def get_courses_from_cache_or_db(self) -> List[Course]:
+    async def get_courses_from_cache_or_db(self, limit: int, search: Optional[str]) -> List[Course]:
         # Check cache first
         cache_key = self.generate_cache_key()
         cached_courses = await self.redis_client.get(cache_key)
@@ -42,8 +42,8 @@ class CourseService:
             return json.loads(cached_courses)  # Deserialize JSON back into list of dicts
     
         # If cache not found, fetch from the database
-        courses = self.crud_course.get_all()
-        
+        courses = self.crud_course.get_all_courses(limit=limit, search=search)
+
         logger.info("Fetching all courses..........")
         if not courses:
             raise CourseNotFound()

@@ -12,8 +12,6 @@ from sqlalchemy.orm import relationship, Mapped, mapped_column
 from ..schemas.base import Role
 from ..database.main import Base 
 
-
-
 class User(Base):
     __tablename__ = "users"
 
@@ -30,21 +28,21 @@ class User(Base):
     CREATED_AT: ClassVar[str] = "created_at"
     UPDATED_AT: ClassVar[str] = "updated_at"
 
-    id: Mapped[UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, nullable=False, default=uuid.uuid4)
-    username: Mapped[str] = mapped_column(nullable=False, unique=True)
-    firstName: Mapped[str] = mapped_column(nullable=False)
-    lastName: Mapped[str] = mapped_column(nullable=False)
-    email: Mapped[str] = mapped_column(nullable=False, unique=True, index=True)
-    email_verified: Mapped[bool] = mapped_column(nullable=False, default=False)
-    password: Mapped[str] = mapped_column(String(15), nullable=False)
-    role: Mapped[str] = mapped_column(nullable=False, default=Role.STUDENT.value)
-    is_active: Mapped[bool] = mapped_column(nullable=False, default=False)
-    created_at: Mapped[datetime] = mapped_column(TIMESTAMP(timezone=True), server_default=text('CURRENT_TIMESTAMP'), nullable=False)
-    updated_at: Mapped[datetime] = mapped_column(TIMESTAMP(timezone=True), server_default=text('CURRENT_TIMESTAMP'), onupdate=text('CURRENT_TIMESTAMP'), nullable=False)
+    id = Column(UUID(as_uuid=True), primary_key=True, nullable=False, default=uuid.uuid4)
+    username = Column(String, nullable=False, unique=True)
+    firstName = Column(String, nullable=False)
+    lastName = Column(String, nullable=False)
+    bio = Column(String, nullable=False)
+    location = Column(String, nullable=False)
+    email = Column(String, nullable=False, unique=True, index=True)
+    email_verified = Column(Boolean, nullable=False, default=False)
+    password = Column(String(15), nullable=False)
+    role = Column(String, nullable=False, default=Role.STUDENT.value)
+    is_active = Column(Boolean, nullable=False, default=False)
+    created_at = Column(TIMESTAMP(timezone=True), server_default=text('CURRENT_TIMESTAMP'), nullable=False)
+    updated_at = Column(TIMESTAMP(timezone=True), server_default=text('CURRENT_TIMESTAMP'), onupdate=text('CURRENT_TIMESTAMP'), nullable=False)
 
-
-    # Relationships
-    profile: Mapped["Profile"] = relationship(back_populates="user", uselist=False)
-    student: Mapped["Student"] = relationship(back_populates="user", uselist=False)
-    instructor: Mapped["Instructor"] = relationship(back_populates="user", uselist=False)
-    notifications: Mapped[List["Notification"]] = relationship(back_populates="user", passive_deletes=True, cascade="all, delete")
+    # Relationships 
+    notifications = relationship("Notification", back_populates="user", passive_deletes=True, cascade="all, delete")
+    courses = relationship("Course", back_populates="students", secondary="enrollments")
+    payments = relationship("Payment", back_populates="student", passive_deletes=True, cascade="all, delete")

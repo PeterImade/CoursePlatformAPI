@@ -1,6 +1,6 @@
 from uuid import UUID
-from typing import Annotated, List
-from fastapi import APIRouter, Depends, status
+from typing import Annotated, List, Optional
+from fastapi import APIRouter, Depends, status, Query
 
 from ..core.tokens import get_verified_current_user
 from ..models.auth_user import User
@@ -32,9 +32,12 @@ async def get_course(
 @router.get("/", status_code=status.HTTP_200_OK, response_model=List[CourseResponse])
 async def get_courses( 
     course_service: Annotated[CourseService, Depends(get_course_service)],
+    limit: int = Query(default=10),
+    page: int = Query(default=1),
+    search: Optional[str] = Query(None, description="Search by course title"),
     current_user: User = Depends(get_verified_current_user)
 ):
-    return await course_service.get_courses_from_cache_or_db()
+    return await course_service.get_courses_from_cache_or_db(limit=limit, search=search)
 
 @router.delete("/{id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_course( 

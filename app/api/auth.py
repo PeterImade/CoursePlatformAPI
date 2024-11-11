@@ -3,7 +3,7 @@ from redis.asyncio import Redis
 from fastapi import APIRouter, Depends, BackgroundTasks, status, Header, Query, HTTPException
 from fastapi.security import OAuth2PasswordRequestForm
 
-from app.core.exceptions import TooManyRequests, UserNotFound
+from ..core.exceptions import TooManyRequests, UserNotFound
 from ..services.auth_user_service import AuthUserService
 from ..services.rate_limiting_service import RateLimiter
 from ..models.auth_user import User

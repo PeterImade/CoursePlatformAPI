@@ -13,16 +13,13 @@ from ..database.main import Base
 class Notification(Base):
     __tablename__ = "notifications"
  
-    id: Mapped[UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, nullable=False, default=uuid.uuid4) 
-    message: Mapped[str] = mapped_column(nullable=False)
-    is_read: Mapped[bool] = mapped_column(nullable=False, default=False) 
-    created_at: Mapped[datetime] = mapped_column(TIMESTAMP(timezone=True), server_default=text('CURRENT_TIMESTAMP'), nullable=False)
-    updated_at: Mapped[datetime] = mapped_column(TIMESTAMP(timezone=True), server_default=text('CURRENT_TIMESTAMP'), onupdate=text('CURRENT_TIMESTAMP'), nullable=False)
+   
+    id = Column(UUID(as_uuid=True), primary_key=True, nullable=False, default=uuid.uuid4)
+    message = Column(String, nullable=False)
+    is_read = Column(Boolean, nullable=False, default=False)
+    created_at = Column(TIMESTAMP(timezone=True), server_default=text('CURRENT_TIMESTAMP'), nullable=False)
+    updated_at = Column(TIMESTAMP(timezone=True), server_default=text('CURRENT_TIMESTAMP'), onupdate=text('CURRENT_TIMESTAMP'), nullable=False)
 
     # Foreign Key & Relationship
-    user_id: Mapped[UUID] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True) 
-    user: Mapped["User"] = relationship(back_populates="notifications")
-    student_id: Mapped[UUID] = mapped_column(ForeignKey("students.id", ondelete="CASCADE"), nullable=False, index=True) 
-    student: Mapped["Student"] = relationship(back_populates="notifications")
-    instructor_id: Mapped[UUID] = mapped_column(ForeignKey("instructors.id", ondelete="CASCADE"), nullable=False, index=True) 
-    instructor: Mapped["Instructor"] = relationship(back_populates="notifications")
+    user_id = Column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+    user = relationship("User", back_populates="notifications")

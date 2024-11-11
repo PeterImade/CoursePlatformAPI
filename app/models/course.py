@@ -19,19 +19,16 @@ class Course(Base):
     DESCRIPTION: ClassVar[str] = "description"
     PRICE: ClassVar[str] = "price"
     STATUS: ClassVar[str] = "status" 
-
-    id: Mapped[UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, nullable=False)
-    title: Mapped[str] = mapped_column(String(200), nullable=False)
-    description: Mapped[str] = mapped_column(String(500), nullable=True)
-    price: Mapped[float] = mapped_column(nullable=False, default=0.0)
-    status: Mapped[str] = mapped_column(String(50), nullable=True)
-    created_at: Mapped[datetime] = mapped_column(TIMESTAMP(timezone=True), server_default=text('CURRENT_TIMESTAMP'), nullable=False)
-    updated_at: Mapped[datetime] = mapped_column(TIMESTAMP(timezone=True), server_default=text('CURRENT_TIMESTAMP'), onupdate=text('CURRENT_TIMESTAMP'), nullable=False)
-
+    
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, nullable=False)
+    title = Column(String(200), nullable=False)
+    description = Column(String(500), nullable=True)
+    price = Column(Float, nullable=False, default=0.0)
+    status = Column(String(50), nullable=True)
+    rating = Column(Float, nullable=True)
+    created_at = Column(TIMESTAMP(timezone=True), server_default=text('CURRENT_TIMESTAMP'), nullable=False)
+    updated_at = Column(TIMESTAMP(timezone=True), server_default=text('CURRENT_TIMESTAMP'), onupdate=text('CURRENT_TIMESTAMP'), nullable=False)
 
     # Relationships
-    payments: Mapped[List["Payment"]] = relationship(back_populates="course", passive_deletes=True, cascade="all, delete")
-    instructor_id: Mapped[UUID] = mapped_column(ForeignKey("instructors.id", ondelete="CASCADE"), nullable=False, index=True)
-    instructor: Mapped["Instructor"] = relationship(back_populates="courses")
-    students: Mapped[List["Student"]] = relationship(back_populates="courses", secondary= "enrollments")
-    enrollments: Mapped[List["Enrollment"]] = relationship(back_populates="course")
+    payments = relationship("Payment", back_populates="course", passive_deletes=True, cascade="all, delete")
+    students = relationship("User", back_populates="courses", secondary="enrollments")
