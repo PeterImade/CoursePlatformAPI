@@ -14,5 +14,5 @@ class RoleChecker:
     def __call__(self, current_user: Annotated[User, Depends(get_verified_current_user)]) -> bool:
         if current_user.role in self.allowed_roles:
             return True
-        
+
         raise UnauthorizedAccess()

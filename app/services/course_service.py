@@ -20,9 +20,11 @@ class CourseService:
     async def generate_cache_key(self):
         return "courses_list"
     
-    async def create_course(self, data_obj: CourseCreate) -> Course:
+    async def create_course(self, data_obj: CourseCreate, instructor_id: UUID) -> Course:
         logger.info("Creating course..........")
-        course = self.crud_course.create(data_obj=data_obj)
+        # last change
+        data_obj["instructor_id"] = instructor_id
+        course = await self.crud_course.create(data_obj=data_obj) 
         logger.info(f"Course created successfully..........\ncourse: {course}")
         return course
     
@@ -32,34 +34,34 @@ class CourseService:
         logger.info("Course retrieved successfully..........")
         return course
     
-    async def get_courses_from_cache_or_db(self, limit: int, search: Optional[str]) -> List[Course]:
+    async def get_courses_from_cache_or_db(self, limit: int) -> List[Course]:
         # Check cache first
-        cache_key = self.generate_cache_key()
-        cached_courses = await self.redis_client.get(cache_key)
+        # cache_key = "courses_list"
+        # cached_courses = await self.redis_client.get(cache_key)
 
-        if cached_courses:
-            # Return cached courses if available
-            return json.loads(cached_courses)  # Deserialize JSON back into list of dicts
+        # if cached_courses:
+        #     # Return cached courses if available
+        #     return json.loads(cached_courses)  # Deserialize JSON back into list of dicts
     
         # If cache not found, fetch from the database
-        courses = self.crud_course.get_all_courses(limit=limit, search=search)
+        courses = self.crud_course.get_all_courses(limit=limit)
 
         logger.info("Fetching all courses..........")
         if not courses:
             raise CourseNotFound()
-        logger.info("Courses retrieved successfully..........")
+        logger.info(f"Courses retrieved successfully: {courses}..........")
 
         # Store the courses in cache for subsequent requests
-        await self.redis_client.setex(cache_key, Config.CACHE_EXPIRY, courses)
+        # await self.redis_client.setex(cache_key, Config.CACHE_EXPIRY, courses)
         return courses
     
     async def delete_course(self, course_id: UUID) -> bool:
         course = self.crud_course.get_course_or_raise_exception(id=course_id) 
-        return self.crud_course.delete(id=course.id)
+        return await self.crud_course.delete(course)
     
     async def update_course(self, course_id: UUID, data_obj: CourseUpdate) -> Course:
         logger.info("Fetching course to be updated..........")
         course = self.crud_course.get_course_or_raise_exception(id=course_id) 
-        updated_course = self.crud_course.update(id=course.id, data_obj=data_obj)
+        updated_course = await self.crud_course.update(id=course.id, data_obj=data_obj)
         logger.info(f"Course updated successfully..........\nupdated_course: f{updated_course}")
         return updated_course

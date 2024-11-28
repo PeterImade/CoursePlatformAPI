@@ -25,10 +25,18 @@ class Course(Base):
     description = Column(String(500), nullable=True)
     price = Column(Float, nullable=False, default=0.0)
     status = Column(String(50), nullable=True)
-    rating = Column(Float, nullable=True)
+    rating = Column(Float, nullable=True, default=0.0)
     created_at = Column(TIMESTAMP(timezone=True), server_default=text('CURRENT_TIMESTAMP'), nullable=False)
     updated_at = Column(TIMESTAMP(timezone=True), server_default=text('CURRENT_TIMESTAMP'), onupdate=text('CURRENT_TIMESTAMP'), nullable=False)
 
     # Relationships
+    # Foreign key to associate each course with an instructor
+    instructor_id = Column(UUID(as_uuid=True), ForeignKey("instructors.id"))
+
+    # One-to-many relationship with Instructor
+    instructor = relationship('Instructor', back_populates='courses')
+
     payments = relationship("Payment", back_populates="course", passive_deletes=True, cascade="all, delete")
+
+    # Many-to-many relationship with students
     students = relationship("User", back_populates="courses", secondary="enrollments")

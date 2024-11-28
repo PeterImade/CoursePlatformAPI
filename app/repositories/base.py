@@ -45,11 +45,11 @@ class CRUDBASE(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
         return query
     
     async def get_by_id(self, id) -> Optional[ModelType]: 
-        data_obj = self.get_query_by_id(id).first()
+        data_obj = self.db.query(self.model).filter(self.model.id == id).first()
         return data_obj
     
-    async def delete(self, id) -> bool: 
-        self.get_query_by_id(id).delete(synchronize_session=False)
+    async def delete(self, obj) -> bool:
+        self.db.delete(obj)
         self.db.commit()
         return True
     
@@ -60,25 +60,21 @@ class CRUDBASE(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
 
             if query is None:
                 raise Exception("Item not found") 
-            
+
             if isinstance(data_obj, dict):
                 data_obj["updated_at"] = datetime.now()
             else:
                 data_obj = data_obj.model_dump(exclude_unset=True)
                 data_obj["updated_at"] = datetime.now()
-            
+
             # Perform the update and commit
             query.update(data_obj, synchronize_session=False)
             self.db.commit()
-            return data_obj
+            result = await self.get_by_id(id)
+            return result
 
         except SQLAlchemyError as e:
             await self.db.rollback()
             # Consider logging the error if needed
             logger.exception(e)
             raise RuntimeError("Database error occurred") from e
-
-            
-    
-    
-    

@@ -14,8 +14,10 @@ class UserCreate(BaseModel):
     username: str = Field(max_length=25)
     email: EmailStr = Field(max_length=40)
     firstName: str = Field(max_length=25)
+    location: str = Field(max_length=25)
     lastName: str = Field(max_length=25)
-    password: str = Field(min_length=6)
+    password: str = Field(max_length=60)
+    bio: str = Field(max_length=300)
 
     @model_validator(mode="before")
     @classmethod
@@ -44,12 +46,31 @@ class UserResponse(BaseModel):
     username: str
     firstName: str
     lastName: str
+    bio: str
+    location: str
     email: EmailStr
     email_verified: bool
-    role: Role
+    role: Role  
     is_active: bool
     created_at: datetime
     updated_at: datetime
+
+class UserProfile(BaseModel):
+    model_config = ConfigDict(arbitrary_types_allowed=True, from_attributes=True)
+    username: str
+    firstName: str
+    lastName: str
+    bio: str
+    location: str
+    email: EmailStr
+
+class UserProfileUpdate(BaseModel):
+    model_config = ConfigDict(arbitrary_types_allowed=True, from_attributes=True)
+    username: str
+    firstName: str
+    lastName: str
+    bio: str
+    location: str   
 
 
 class RegisterUserResponse(BaseModel):

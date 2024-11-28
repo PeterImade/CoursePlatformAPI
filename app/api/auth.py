@@ -1,5 +1,5 @@
 from typing import Annotated
-from redis.asyncio import Redis
+from redis import Redis
 from fastapi import APIRouter, Depends, BackgroundTasks, status, Header, Query, HTTPException
 from fastapi.security import OAuth2PasswordRequestForm
 
@@ -8,12 +8,12 @@ from ..services.auth_user_service import AuthUserService
 from ..services.rate_limiting_service import RateLimiter
 from ..models.auth_user import User
 from ..schemas.otp import OTPVerifyRequest, OTPVerified, ResendOTPRequest, ResendOTPResponse
-from ..schemas.user import ChangePasswordRequest, ChangeRoleRequest, EmailRequest, LogoutResponse, NewPasswordRequest, PasswordChanged, RefreshTokenRequest, RegisterUserResponse, ResetPasswordResponse, TokenDeactivate, Tokens, UserCreate, ForgotPasswordResponse, UserResponse
+from ..schemas.user import ChangePasswordRequest, ChangeRoleRequest, EmailRequest, LogoutResponse, NewPasswordRequest, PasswordChanged, RefreshTokenRequest, RegisterUserResponse, ResetPasswordResponse, TokenDeactivate, Tokens, UserCreate, ForgotPasswordResponse, UserProfile, UserResponse
 from ..core.tokens import get_verified_current_user
 from ..core.redis_setup import get_redis
 from ..dependencies.services import get_auth_user_service, get_rate_limiter
 
-router = APIRouter(prefix="/api/v1/auth", tags=["User"])
+router = APIRouter(prefix="/api/v1/auth", tags=["Auth"])
 
 @router.post("/register", status_code=status.HTTP_201_CREATED, response_model=RegisterUserResponse)
 async def register_user(
@@ -22,7 +22,7 @@ async def register_user(
     background_task: BackgroundTasks,
     auth_user_service: Annotated[AuthUserService, Depends(get_auth_user_service)]
 ):
-    return await auth_user_service.register_auth_user(data_obj=data_obj, redis=redis, background_task=background_task)
+        return await auth_user_service.register_auth_user(data_obj=data_obj, redis=redis, background_task=background_task)
 
 @router.post("/verify-otp", status_code=status.HTTP_200_OK, response_model=OTPVerified)
 async def verify_otp(
@@ -54,9 +54,7 @@ async def resend_otp(
 
     return await auth_user_service.resend_otp(data_obj=data_obj,background_task=background_task, redis=redis)
 
-
-
-@router.post("/login", status_code=status.HTTP_201_CREATED, response_model=Tokens)
+@router.post("/login", status_code=status.HTTP_200_OK, response_model=Tokens)
 async def login(
     form_data: OAuth2PasswordRequestForm = Depends(),
     redis: Redis = Depends(get_redis),
@@ -64,7 +62,16 @@ async def login(
 ):
     return await auth_user_service.login_user(form_data=form_data, redis=redis)
 
-@router.post("/refresh-token", status_code=status.HTTP_200_OK, response_model=Tokens)
+
+@router.get("/me", status_code=status.HTTP_200_OK, response_model=UserResponse)
+async def get_me(
+    auth_user_service: AuthUserService = Depends(get_auth_user_service),
+    current_user: User = Depends(get_verified_current_user)
+):
+    return await auth_user_service.get_me(current_user.id)
+
+
+@router.post("/refresh", status_code=status.HTTP_200_OK, response_model=Tokens)
 async def refresh_token(
     data_obj: RefreshTokenRequest,
     user: User = Depends(get_verified_current_user),
@@ -113,7 +120,4 @@ async def change_role(
     auth_user_service: Annotated[AuthUserService, Depends(get_auth_user_service)],
     current_user: Annotated[User, Depends(get_verified_current_user)]
 ):
-    try:
-        return await auth_user_service.change_role(user_id=current_user.id)
-    except Exception as e:
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="An error occurred")
+    return await auth_user_service.change_role(user=current_user, role=data_obj.role)

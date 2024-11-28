@@ -29,20 +29,20 @@ class User(Base):
     UPDATED_AT: ClassVar[str] = "updated_at"
 
     id = Column(UUID(as_uuid=True), primary_key=True, nullable=False, default=uuid.uuid4)
-    username = Column(String, nullable=False, unique=True)
-    firstName = Column(String, nullable=False)
-    lastName = Column(String, nullable=False)
-    bio = Column(String, nullable=False)
-    location = Column(String, nullable=False)
-    email = Column(String, nullable=False, unique=True, index=True)
+    username = Column(String(25), nullable=False, unique=True)
+    firstName = Column(String(25), nullable=False)
+    lastName = Column(String(25), nullable=False)
+    bio = Column(String(300), nullable=False)
+    password = Column(String(60), nullable=False)
+    location = Column(String(25), nullable=False)
+    email = Column(String(40), nullable=False, unique=True, index=True)
     email_verified = Column(Boolean, nullable=False, default=False)
-    password = Column(String(15), nullable=False)
     role = Column(String, nullable=False, default=Role.STUDENT.value)
     is_active = Column(Boolean, nullable=False, default=False)
     created_at = Column(TIMESTAMP(timezone=True), server_default=text('CURRENT_TIMESTAMP'), nullable=False)
     updated_at = Column(TIMESTAMP(timezone=True), server_default=text('CURRENT_TIMESTAMP'), onupdate=text('CURRENT_TIMESTAMP'), nullable=False)
 
-    # Relationships 
+    # Relationships  
     notifications = relationship("Notification", back_populates="user", passive_deletes=True, cascade="all, delete")
     courses = relationship("Course", back_populates="students", secondary="enrollments")
     payments = relationship("Payment", back_populates="student", passive_deletes=True, cascade="all, delete")

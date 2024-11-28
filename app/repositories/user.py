@@ -13,7 +13,7 @@ class CRUDAuthUser(CRUDBASE[User, UserCreate, UserCreate]):
     def get_user_by_email(self, email: EmailStr) -> Optional[User]:
         response = self.db.query(self.model).filter(self.model.email == email.lower()).first()
         return response if response else None
-
+    
 crudAuthUser = CRUDAuthUser(db=get_db(), model=User)
 
 def get_crud_auth_user(db=Depends(get_db)):
